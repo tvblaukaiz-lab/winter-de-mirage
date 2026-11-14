@@ -65,7 +65,7 @@
         .select-plan-btn {
             width: 100%;
             padding: 12px;
-            border: 1px solid var(--plan-color);
+            border: 1px solid var(--plan-color, #438ab9);
             border-radius: 8px;
             background: transparent;
             color: white;
@@ -76,8 +76,28 @@
 
         .select-plan-btn:hover,
         .plan.selected .select-plan-btn {
-            background: var(--plan-color);
+            background: var(--plan-color, #35c9ff);
             color: #07111c;
+        }
+
+        .pay-button {
+            display: none;
+            max-width: 300px;
+            margin: 18px auto 0;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #35c9ff, #287eb8);
+            color: #07111c;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .pay-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 18px rgba(53, 201, 255, 0.4);
         }
 
         .duration-buttons {
@@ -232,7 +252,7 @@
             <h3>VIP</h3>
             <p>103 HP</p>
             <p data-ru="1 шприц — 50 HP" data-ua="1 шприц — 50 HP">1 шприц — 50 HP</p>
-            <strong class="price" id="vip-price">100 ₽ / 55 ₴</strong>
+            <strong class="price" id="vip-price">100 ₽ / загрузка...</strong>
             <button class="select-plan-btn" onclick="selectPlan('vip')"
                     data-ru="Выбрать" data-ua="Обрати">Выбрать</button>
         </div>
@@ -242,7 +262,7 @@
             <p>106 HP</p>
             <p data-ru="2 шприца" data-ua="2 шприци">2 шприца</p>
             <p data-ru="+1 возрождение" data-ua="+1 відродження">+1 возрождение</p>
-            <strong class="price" id="premium-price">300 ₽ / 165 ₴</strong>
+            <strong class="price" id="premium-price">300 ₽ / загрузка...</strong>
             <button class="select-plan-btn" onclick="selectPlan('premium')"
                     data-ru="Выбрать" data-ua="Обрати">Выбрать</button>
         </div>
@@ -253,7 +273,7 @@
             <p data-ru="2 шприца" data-ua="2 шприци">2 шприца</p>
             <p data-ru="Автораспрыжка" data-ua="Автострибки">Автораспрыжка</p>
             <p data-ru="+1 возрождение" data-ua="+1 відродження">+1 возрождение</p>
-            <strong class="price" id="god-price">600 ₽ / 330 ₴</strong>
+            <strong class="price" id="god-price">600 ₽ / загрузка...</strong>
             <button class="select-plan-btn" onclick="selectPlan('god')"
                     data-ru="Выбрать" data-ua="Обрати">Выбрать</button>
         </div>
@@ -263,20 +283,31 @@
         <h3 data-ru="Твой выбор" data-ua="Твій вибір">Твой выбор</h3>
         <p class="selection-name" id="selectedPlanName">VIP</p>
         <p id="selectedDuration">1 месяц</p>
-        <span class="selected-price" id="selectedPrice">100 ₽ / 55 ₴</span>
-        <p data-ru="Выбор сохранён на этой странице. Оплата пока не подключена."
-           data-ua="Вибір збережено на цій сторінці. Оплату поки не підключено.">
-           Выбор сохранён на этой странице. Оплата пока не подключена.
+        <span class="selected-price" id="selectedPrice">100 ₽</span>
+
+        <p data-ru="Для оплаты необходимо войти через Steam."
+           data-ua="Для оплати потрібно увійти через Steam.">
+           Для оплаты необходимо войти через Steam.
         </p>
+
+        <button
+            class="pay-button"
+            id="payButton"
+            onclick="startPayment()"
+            data-ru="Оплатить"
+            data-ua="Оплатити">
+            Оплатить
+        </button>
     </div>
 </section>
 
 <footer>
     © 2026 Winter de Mirage
-    <p>Курс валют:
+    <p>
+        Курс валют:
         <a href="https://www.exchangerate-api.com"
            target="_blank" rel="noopener noreferrer">
-           Rates By Exchange Rate API
+            Rates By Exchange Rate API
         </a>
     </p>
 </footer>
@@ -285,6 +316,7 @@
 let currentLanguage = "ru";
 let selectedPlan = null;
 let selectedDuration = 0;
+let isSteamLoggedIn = false;
 
 const prices = {
     vip: [100, 150, 200],
@@ -294,7 +326,19 @@ const prices = {
 
 let rubToUahRate = null;
 let exchangeRateStatus = "loading";
+
 const RATE_CACHE_KEY = "winterDeMirageRubUahRate";
+
+function updatePaymentButton() {
+    const button = document.getElementById("payButton");
+
+    if (!button) return;
+
+    button.style.display =
+        isSteamLoggedIn && selectedPlan
+        ? "block"
+        : "none";
+}
 
 function formatPrice(plan, index) {
     const rubPrice = prices[plan][index];
@@ -307,7 +351,7 @@ function formatPrice(plan, index) {
         return `${rubPrice} ₽ / ${statusText}`;
     }
 
-    // Округление всегда вверх до ближайших 5 гривен
+    // Округляем гривны вверх до ближайших 5
     const uahPrice = Math.ceil(
         (rubPrice * rubToUahRate) / 5
     ) * 5;
@@ -401,6 +445,10 @@ async function checkSteamLogin() {
     const avatar = document.getElementById("steamAvatar");
     const nickname = document.getElementById("steamNickname");
 
+    // По умолчанию пользователь не авторизован
+    isSteamLoggedIn = false;
+    updatePaymentButton();
+
     try {
         const response = await fetch(
             "/.netlify/functions/steam-me",
@@ -426,6 +474,7 @@ async function checkSteamLogin() {
         }
 
         nickname.textContent = data.nickname || "Steam игрок";
+
         profile.href =
             "https://steamcommunity.com/profiles/" + data.steamId;
 
@@ -439,10 +488,17 @@ async function checkSteamLogin() {
         loginButton.style.display = "none";
         profile.style.display = "flex";
 
+        isSteamLoggedIn = true;
+        updatePaymentButton();
+
     } catch (error) {
         console.error("Steam login check failed:", error);
+
         loginButton.style.display = "";
         profile.style.display = "none";
+
+        isSteamLoggedIn = false;
+        updatePaymentButton();
     }
 }
 
@@ -476,6 +532,7 @@ function selectPlan(plan) {
     document.getElementById("selectionSummary").classList.add("visible");
 
     updateSelection();
+    updatePaymentButton();
 }
 
 function updateSelection() {
@@ -504,6 +561,19 @@ function switchLanguage() {
     document.documentElement.lang = currentLanguage;
 
     updateSelection();
+}
+
+function startPayment() {
+    if (!isSteamLoggedIn || !selectedPlan) {
+        updatePaymentButton();
+        return;
+    }
+
+    alert(
+        currentLanguage === "ru"
+        ? "Платёжная система пока не подключена."
+        : "Платіжну систему поки не підключено."
+    );
 }
 
 document.addEventListener("DOMContentLoaded", () => {
