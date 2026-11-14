@@ -1,15 +1,34 @@
 
 const crypto = require("crypto");
 
+function safeEqual(a, b) {
+    const first = Buffer.from(a);
+    const second = Buffer.from(b);
+
+    return first.length === second.length &&
+        crypto.timingSafeEqual(first, second);
+}
+
+function response(data, statusCode = 200) {
+    return {
+        statusCode,
+        headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store"
+        },
+        body: JSON.stringify(data)
+    };
+}
+
 exports.handler = async (event) => {
     try {
         const secret = process.env.SESSION_SECRET;
 
         if (!secret || secret.length < 32) {
-            return {
-                statusCode: 500,
-                body: JSON.stringify({ error: "Server configuration error" })
-            };
+            return response({
+                loggedIn: false,
+                error: "SESSION_SECRET is missing or too short."
+            }, 500);
         }
 
         const cookies = event.headers.cookie ||
@@ -21,76 +40,57 @@ exports.handler = async (event) => {
             .find(item => item.startsWith("wmd_session="));
 
         if (!sessionCookie) {
-            return {
-                statusCode: 401,
-                body: JSON.stringify({ loggedIn: false })
-            };
+            return response({ loggedIn: false });
         }
 
         const value = decodeURIComponent(
             sessionCookie.slice("wmd_session=".length)
         );
 
-        const parts = value.split(".");
-        const payload = parts[0];
-        const signature = parts[1];
+        const separator = value.lastIndexOf(".");
 
-        if (!payload || !signature) {
-            return {
-                statusCode: 401,
-                body: JSON.stringify({ loggedIn: false })
-            };
+        if (separator === -1) {
+            return response({ loggedIn: false });
         }
 
-        const expected = crypto
+        const payload = value.slice(0, separator);
+        const signature = value.slice(separator + 1);
+
+        const expectedSignature = crypto
             .createHmac("sha256", secret)
             .update(payload)
             .digest("base64url");
 
-        const first = Buffer.from(signature);
-        const second = Buffer.from(expected);
-
-        if (
-            first.length !== second.length ||
-            !crypto.timingSafeEqual(first, second)
-        ) {
-            return {
-                statusCode: 401,
-                body: JSON.stringify({ loggedIn: false })
-            };
+        if (!signature ||
+            !safeEqual(signature, expectedSignature)) {
+            return response({ loggedIn: false });
         }
 
         const session = JSON.parse(
             Buffer.from(payload, "base64url").toString("utf8")
         );
 
+        const maxAge = 7 * 24 * 60 * 60 * 1000;
+
         if (
             !session.steamId ||
+            !/^\d{17}$/.test(session.steamId) ||
             !session.issuedAt ||
-            Date.now() - session.issuedAt > 604800000
+            Date.now() - session.issuedAt > maxAge ||
+            session.issuedAt > Date.now() + 60000
         ) {
-            return {
-                statusCode: 401,
-                body: JSON.stringify({ loggedIn: false })
-            };
+            return response({ loggedIn: false });
         }
 
-        return {
-            statusCode: 200,
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                loggedIn: true,
-                steamId: session.steamId
-            })
-        };
+        return response({
+            loggedIn: true,
+            steamId: session.steamId
+        });
 
     } catch (error) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: "Session check failed" })
-        };
+        return response({
+            loggedIn: false,
+            error: "Could not check Steam session."
+        }, 500);
     }
 };
-
