@@ -1,6 +1,24 @@
 
 const crypto = require("crypto");
 
+function getCookie(event, name) {
+    const cookies = event.headers.cookie ||
+        event.headers.Cookie || "";
+
+    const item = cookies
+        .split(";")
+        .map(value => value.trim())
+        .find(value => value.startsWith(name + "="));
+
+    if (!item) return null;
+
+    try {
+        return decodeURIComponent(item.slice(name.length + 1));
+    } catch {
+        return null;
+    }
+}
+
 function safeEqual(a, b) {
     const first = Buffer.from(a);
     const second = Buffer.from(b);
@@ -22,37 +40,35 @@ exports.handler = async (event) => {
 
         const params = event.queryStringParameters || {};
         const state = params.state || "";
+        const cookieValue = getCookie(event, "wmd_state");
 
-        const cookies = event.headers.cookie ||
-            event.headers.Cookie || "";
-
-        const stateCookie = cookies
-            .split(";")
-            .map(item => item.trim())
-            .find(item => item.startsWith("wmd_state="));
-
-        if (!stateCookie) {
+        if (!cookieValue) {
             return {
                 statusCode: 400,
                 body: "Login session expired. Try again."
             };
         }
 
-        const cookieValue = decodeURIComponent(
-            stateCookie.slice("wmd_state=".length)
-        );
+        const separator = cookieValue.lastIndexOf(".");
 
-        const [cookieState, cookieSignature] = cookieValue.split(".");
+        if (separator === -1) {
+            return {
+                statusCode: 400,
+                body: "Invalid login cookie."
+            };
+        }
+
+        const cookieState = cookieValue.slice(0, separator);
+        const cookieSignature = cookieValue.slice(separator + 1);
 
         const expectedSignature = crypto
             .createHmac("sha256", secret)
-            .update(cookieState || "")
+            .update(cookieState)
             .digest("hex");
 
         if (
             !state ||
             state !== cookieState ||
-            !cookieSignature ||
             !safeEqual(cookieSignature, expectedSignature)
         ) {
             return {
@@ -63,9 +79,11 @@ exports.handler = async (event) => {
 
         const site = "https://stately-gingersnap-93e41a.netlify.app";
         const callback = `${site}/.netlify/functions/steam-callback`;
-        const expectedReturnTo = `${callback}?state=${state}`;
 
-        if (params["openid.return_to"] !== expectedReturnTo) {
+        if (
+            params["openid.return_to"] !==
+            `${callback}?state=${state}`
+        ) {
             return {
                 statusCode: 400,
                 body: "Invalid Steam callback."
@@ -116,10 +134,8 @@ exports.handler = async (event) => {
             };
         }
 
-        const steamId = match[1];
-
         const payload = Buffer.from(JSON.stringify({
-            steamId,
+            steamId: match[1],
             issuedAt: Date.now()
         })).toString("base64url");
 
@@ -133,7 +149,9 @@ exports.handler = async (event) => {
         return {
             statusCode: 302,
             headers: {
-                Location: site,
+                Location: site
+            },
+            multiValueHeaders: {
                 "Set-Cookie": [
                     `wmd_session=${sessionCookie}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`,
                     "wmd_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
