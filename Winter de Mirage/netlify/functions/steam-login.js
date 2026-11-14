@@ -12,10 +12,11 @@ exports.handler = async () => {
       };
     }
 
-    const site = "https://zesty-blini-1a4703.netlify.app";
+    const site = "https://stately-gingersnap-93e41a.netlify.app";
     const callback = `${site}/.netlify/functions/steam-callback`;
 
     const state = crypto.randomBytes(24).toString("hex");
+
     const signature = crypto
       .createHmac("sha256", secret)
       .update(state)
@@ -23,9 +24,15 @@ exports.handler = async () => {
 
     const steamUrl = new URL("https://steamcommunity.com/openid/login");
 
-    steamUrl.searchParams.set("openid.ns", "http://specs.openid.net/auth/2.0");
+    steamUrl.searchParams.set(
+      "openid.ns",
+      "http://specs.openid.net/auth/2.0"
+    );
     steamUrl.searchParams.set("openid.mode", "checkid_setup");
-    steamUrl.searchParams.set("openid.return_to", `${callback}?state=${state}`);
+    steamUrl.searchParams.set(
+      "openid.return_to",
+      `${callback}?state=${state}`
+    );
     steamUrl.searchParams.set("openid.realm", site);
     steamUrl.searchParams.set(
       "openid.identity",
@@ -44,6 +51,7 @@ exports.handler = async () => {
       },
       body: ""
     };
+
   } catch (error) {
     return {
       statusCode: 500,
