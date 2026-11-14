@@ -61,7 +61,7 @@ exports.handler = async (event) => {
             };
         }
 
-        const site = "https://zesty-blini-1a4703.netlify.app";
+        const site = "https://stately-gingersnap-93e41a.netlify.app";
         const callback = `${site}/.netlify/functions/steam-callback`;
         const expectedReturnTo = `${callback}?state=${state}`;
 
@@ -134,8 +134,10 @@ exports.handler = async (event) => {
             statusCode: 302,
             headers: {
                 Location: site,
-                "Set-Cookie": `wmd_session=${sessionCookie}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`,
-                "Set-Cookie-2": "wmd_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
+                "Set-Cookie": [
+                    `wmd_session=${sessionCookie}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`,
+                    "wmd_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
+                ]
             },
             body: ""
         };
