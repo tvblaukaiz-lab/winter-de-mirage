@@ -1,0 +1,306 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: #070d18;
+    color: #eaf4ff;
+    font-family: Arial, sans-serif;
+}
+
+/* Шапка */
+
+.header {
+    min-height: 85px;
+    padding: 15px 5%;
+    background: #0b1424;
+    border-bottom: 1px solid #24496b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.logo {
+    color: #8bd5ff;
+    font-size: 21px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-actions button {
+    cursor: pointer;
+    border: none;
+    border-radius: 7px;
+    padding: 13px 22px;
+    font-size: 15px;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.login-btn {
+    background: #168de0;
+    color: white;
+}
+
+.login-btn:hover {
+    background: #36aaff;
+}
+
+.register-btn {
+    background: #eaf4ff;
+    color: #10243b;
+}
+
+.register-btn:hover {
+    background: #b9e3ff;
+}
+
+.language-btn {
+    background: #172a42;
+    color: #8bd5ff;
+    border: 1px solid #315578 !important;
+}
+
+.language-btn:hover {
+    background: #23476b;
+}
+
+/* Навигация */
+
+.navigation {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 35px;
+    padding: 20px;
+    background: #0a1220;
+}
+
+.navigation a {
+    color: #b9cce0;
+    text-decoration: none;
+    font-size: 15px;
+    transition: 0.2s;
+}
+
+.navigation a:hover {
+    color: #65c5ff;
+}
+
+/* Главный экран */
+
+.hero {
+    min-height: 440px;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: radial-gradient(
+        ellipse at center,
+        #153d60,
+        #0a192b 55%,
+        #070d18
+    );
+}
+
+.snowflake {
+    color: #8bd5ff;
+    font-size: 60px;
+    margin-bottom: 15px;
+}
+
+.hero h1 {
+    font-size: clamp(30px, 6vw, 58px);
+    color: #d8efff;
+    letter-spacing: 4px;
+    text-shadow: 0 0 25px #168de0;
+}
+
+.hero p {
+    color: #a9c5df;
+    font-size: 18px;
+    margin: 20px 0 30px;
+}
+
+.main-button {
+    background: #168de0;
+    color: white;
+    padding: 14px 28px;
+    border-radius: 7px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.main-button:hover {
+    background: #36aaff;
+    transform: translateY(-3px);
+}
+
+/* Разделы */
+
+.section {
+    max-width: 1100px;
+    margin: auto;
+    padding: 65px 25px;
+    text-align: center;
+}
+
+.section h2 {
+    color: #8bd5ff;
+    font-size: 30px;
+    margin-bottom: 35px;
+}
+
+/* Сервер */
+
+.server-card {
+    max-width: 550px;
+    margin: auto;
+    padding: 30px;
+    background: linear-gradient(145deg, #12243a, #0c1728);
+    border: 1px solid #24496b;
+    border-radius: 13px;
+    box-shadow: 0 0 25px #061c30;
+}
+
+.server-card h3 {
+    color: #8bd5ff;
+    font-size: 25px;
+    margin-bottom: 12px;
+}
+
+.server-card p {
+    color: #b5cce2;
+    margin: 12px 0;
+}
+
+.status {
+    display: inline-block;
+    color: #ffd477;
+    background: #42351b;
+    padding: 8px 13px;
+    border-radius: 6px;
+    margin: 15px 0;
+}
+
+/* Выбор срока */
+
+.duration-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.duration-btn {
+    padding: 12px 22px;
+    color: #b9cce0;
+    background: #14243a;
+    border: 1px solid #315578;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: 0.2s;
+}
+
+.duration-btn:hover,
+.duration-btn.active {
+    background: #168de0;
+    color: white;
+    border-color: #36aaff;
+}
+
+/* Карточки привилегий */
+
+.plans {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.plan {
+    padding: 28px 18px;
+    background: linear-gradient(145deg, #142a43, #0b1728);
+    border: 1px solid #285274;
+    border-radius: 12px;
+    transition: 0.25s;
+}
+
+.plan:hover {
+    transform: translateY(-6px);
+    border-color: #65c5ff;
+    box-shadow: 0 0 20px #123c5c;
+}
+
+.plan h3 {
+    color: #8bd5ff;
+    font-size: 23px;
+    margin-bottom: 20px;
+}
+
+.plan p {
+    color: #b9cce0;
+    margin: 12px 0;
+}
+
+.plan strong {
+    display: block;
+    color: white;
+    font-size: 18px;
+    margin-top: 22px;
+}
+
+/* Подвал */
+
+footer {
+    text-align: center;
+    padding: 25px;
+    background: #0b1424;
+    border-top: 1px solid #183858;
+    color: #7895b2;
+}
+
+/* Телефоны */
+
+@media (max-width: 700px) {
+    .header {
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .navigation {
+        gap: 18px;
+    }
+
+    .plans {
+        grid-template-columns: 1fr;
+    }
+
+    .hero h1 {
+        letter-spacing: 2px;
+    }
+}
